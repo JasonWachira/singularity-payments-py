@@ -22,17 +22,20 @@ from ..utils.errors import (
 from ..utils.retry import retryWithBackoff, RetryOptions
 from ..utils.ratelimiter import RateLimiter, RedisLike, RedisRateLimiter
 
+
 class RateLimitOption(TypedDict, total=False):
     enabled: bool
     maxRequests: int
     windowMs: int
     redis: RedisLike
 
+
 class MpesaClientOptions(TypedDict, total=False):
     callbackOptions: CallbackHandlerOptions
     retryOptions: RetryOptions
     rateLimitOptions: RateLimitOption
-    requestTimeout: int 
+    requestTimeout: int
+
 
 class MpesaClient:
     def __init__(self, config: MpesaConfig, options: Optional[MpesaClientOptions] = None):
@@ -61,7 +64,7 @@ class MpesaClient:
             else:
                 self.ratelimiter = RateLimiter(limiter_config)
 
-        self._session: aiohttp.ClientSession | None = None   
+        self._session: aiohttp.ClientSession | None = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
         if not self._session or self._session.closed:
@@ -70,10 +73,10 @@ class MpesaClient:
         return self._session
 
     async def makeRequest(
-        self,
-        endpoint: str,
-        payload: dict,
-        ratelimitKey: str | None = None,
+            self,
+            endpoint: str,
+            payload: dict,
+            ratelimitKey: str | None = None,
     ):
         async def _request():
             if self.ratelimiter and ratelimitKey:
@@ -87,12 +90,12 @@ class MpesaClient:
 
             try:
                 async with session.post(
-                    url,
-                    json=payload,
-                    headers={
-                        "Authorization": f"Bearer {token}",
-                        "Content-Type": "application/json",
-                    },
+                        url,
+                        json=payload,
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json",
+                        },
                 ) as response:
 
                     if not 200 <= response.status < 300:
@@ -118,7 +121,6 @@ class MpesaClient:
 
         return await retryWithBackoff(_request, self.retryOptions)
 
-   
     def validateAndFormatPhone(self, phone: str) -> str:
         formatted = re.sub(r"[\s\-+]", "", phone)
 
@@ -131,8 +133,6 @@ class MpesaClient:
             raise MpesaValidationError(f"Invalid phone number format: {phone}")
 
         return formatted
-
-
 
     async def stkPush(self, request: STKPushRequest) -> STKPushResponse:
         if request["amount"] < 1:
@@ -183,8 +183,6 @@ class MpesaClient:
             f"query:{request['CheckoutRequestID']}",
         )
 
-  
-
     async def registerC2BUrl(self, request: C2BRegisterRequest) -> C2BRegisterResponse:
         if not request.get("confirmationURL") or not request.get("validationURL"):
             raise MpesaValidationError("Both confirmation and validation URLs required")
@@ -201,8 +199,6 @@ class MpesaClient:
             payload,
             "c2b:register",
         )
-
-  
 
     async def b2c(self, request: B2CRequest) -> B2CResponse:
         if request["amount"] < 10:
@@ -231,7 +227,6 @@ class MpesaClient:
             payload,
             f"b2c:{phone}",
         )
-
 
     async def b2b(self, request: B2BRequest) -> B2BResponse:
         if request["amount"] < 1:
@@ -264,10 +259,8 @@ class MpesaClient:
             f"b2b:{request['partyB']}",
         )
 
-    
-
     async def accountBalance(
-        self, request: Optional[AccountBalanceRequest] = None
+            self, request: Optional[AccountBalanceRequest] = None
     ) -> AccountBalanceResponse:
         request = request or {}
 
@@ -289,7 +282,7 @@ class MpesaClient:
         )
 
     async def transactionStatus(
-        self, request: GeneralTransactionStatusRequest
+            self, request: GeneralTransactionStatusRequest
     ) -> GeneralTransactionStatusResponse:
         if not request.get("transactionID"):
             raise MpesaValidationError("Transaction ID required")
@@ -340,9 +333,8 @@ class MpesaClient:
             f"reversal:{request['transactionID']}",
         )
 
-
     async def generateDynamicQR(
-        self, request: DynamicQRRequest
+            self, request: DynamicQRRequest
     ) -> DynamicQRResponse:
         if not request.get("merchantName") or len(request["merchantName"]) > 26:
             raise MpesaValidationError("Merchant name must be ≤ 26 characters")
@@ -367,8 +359,6 @@ class MpesaClient:
             payload,
             f"qr:{request['refNo']}",
         )
-
-  
 
     def getCallbackHandler(self) -> MpesaCallbackHandler:
         return self.callbackHandler
@@ -442,8 +432,6 @@ class MpesaClient:
         except Exception as e:
             print(f"Reversal callback error: {e}")
             return self.callbackHandler.create_callback_response(False, "Processing Failed")
-
-
 
     async def destroy(self):
         if self._session and not self._session.closed:
