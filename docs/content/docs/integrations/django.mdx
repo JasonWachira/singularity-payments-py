@@ -177,24 +177,15 @@ def handle_failure(data):
     #     checkout_request_id=data.get("checkout_request_id")
     # ).update(status='failed')
 
-mpesa = create_mpesa(
-    consumer_key=settings.MPESA_CONFIG['CONSUMER_KEY'],
-    consumer_secret=settings.MPESA_CONFIG['CONSUMER_SECRET'],
-    passkey=settings.MPESA_CONFIG['PASSKEY'],
-    shortcode=settings.MPESA_CONFIG['SHORTCODE'],
-    environment=settings.MPESA_CONFIG['ENVIRONMENT'],
-    callback_url=settings.MPESA_CONFIG['CALLBACK_URL'],
-
-    # Required for B2C, B2B, Reversal, Transaction Status, and Account Balance
-    initiator_name=settings.MPESA_CONFIG['INITIATOR_NAME'],
-    security_credential=settings.MPESA_CONFIG['SECURITY_CREDENTIAL'],
-    result_url=settings.MPESA_CONFIG['RESULT_URL'],
-    timeout_url=settings.MPESA_CONFIG.get('TIMEOUT_URL'),
-
-    callback_options={
-        "on_success": handle_success,
-        "on_failure": handle_failure,
+options = {
+    "callbackOptions": {
+        "onSuccess": onSuccess,
+        "onFailure": onFailure
     }
+}
+mpesa = create_mpesa(
+    settings.MPESA_CONFIG,
+    options=options
 )
 ```
 
@@ -216,12 +207,7 @@ def initiate_stkPush(request):
     try:
         data = json.loads(request.body)
 
-        result = mpesa.stkPush(
-            amount=data.get("amount"),
-            phone_number=data.get("phone_number"),
-            account_reference=data.get("account_reference", "Payment"),
-            transaction_desc=data.get("transaction_desc", "Payment")
-        )
+        result = mpesa.stkPush(data)
 
         if result.error:
             return JsonResponse({"error": result.error}, status=400)
@@ -248,9 +234,7 @@ def query_stk_status(request):
     try:
         data = json.loads(request.body)
 
-        result = mpesa.stkQuery(
-            checkout_request_id=data.get("checkout_request_id")
-        )
+        result = mpesa.stkQuery(data)
 
         if result.error:
             return JsonResponse({"error": result.error}, status=400)
@@ -268,8 +252,9 @@ def query_stk_status(request):
 Set up URL routing for M-Pesa endpoints:
 
 ```python title="mpesa_app/urls.py"
-from django.urls import path
+from django.urls import path, include
 from . import views
+from .mpesa import mpesa
 
 app_name = 'mpesa'
 
@@ -277,7 +262,7 @@ urlpatterns = [
     path('stk-push/', views.initiate_stkPush, name='stkPush'),
     path('callback/', views.stkPush_callback, name='callback'),
     path('query/', views.query_stk_status, name='query'),
-    path('mpesa/', include('singularity_payments.django.urls')
+    path('mpesa/', include(mpesa['urls']))
 ]
 ```
 

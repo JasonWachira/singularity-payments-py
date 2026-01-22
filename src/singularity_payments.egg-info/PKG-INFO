@@ -1,3 +1,17 @@
+Metadata-Version: 2.4
+Name: singularity-payments
+Version: 0.1.0
+Summary: M-Pesa SDK
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: requests
+Requires-Dist: python-dotenv
+Provides-Extra: django
+Requires-Dist: Django>=4.2; extra == "django"
+Provides-Extra: fastapi
+Requires-Dist: fastapi>=0.110; extra == "fastapi"
+Requires-Dist: pydantic>=2.0; extra == "fastapi"
+
 # Singularity Payments
 
 A modern Python SDK for integrating M-Pesa payments into your applications. Built with developer experience in mind, featuring automatic retries, rate limiting, and comprehensive error handling.
