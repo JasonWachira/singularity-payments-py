@@ -1,0 +1,760 @@
+---
+title: Quick Start
+description: Get started with M-Pesa payments in your Python app in minutes.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Steps, Step } from "fumadocs-ui/components/steps";
+
+## Installation
+
+Install the Singularity Payments package for your Python framework:
+
+<Tabs items={["FastAPI", "Django", "Flask"]}>
+  <Tab value="FastAPI">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[fastapi]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[fastapi]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[fastapi]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Django">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[django]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[django]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[django]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Flask">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[flask]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[flask]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[flask]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Sanic">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[sanic]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[sanic]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[sanic]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Starlette">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[starlette]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[starlette]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[starlette]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Litestar">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[litestar]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[litestar]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[litestar]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Quart">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[quart]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[quart]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[quart]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+## Setup Ngrok for Testing
+
+M-Pesa requires a public callback URL to send payment notifications. For local development, use ngrok:
+
+<Steps>
+<Step>
+
+Install ngrok from [ngrok.com](https://ngrok.com) or using your system's package manager:
+
+```bash
+# macOS
+brew install ngrok
+
+# Linux
+sudo snap install ngrok
+
+# Windows
+choco install ngrok
+```
+
+</Step>
+<Step>
+
+Start ngrok on your dev port:
+
+```bash
+ngrok http 8000
+```
+
+</Step>
+<Step>
+
+Copy the forwarding URL (e.g., `https://abc123.ngrok-free.app`)
+
+</Step>
+</Steps>
+
+<Callout type="warn">
+  Keep ngrok running while testing. M-Pesa callbacks will fail without it.
+</Callout>
+
+## Environment Setup
+
+Create a `.env` file in your project root:
+
+```bash title=".env"
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_SHORTCODE=174379  # For STK Push Testing in Sandbox (Replace with your shortcode in production)
+MPESA_PASSKEY=your_passkey
+MPESA_ENVIRONMENT=sandbox  # or 'production'
+CALLBACK_URL=https://your-ngrok-url.ngrok-free.app/api/mpesa/callback
+```
+
+<Callout type="warn">
+  Never commit your .env file to version control. Add it to .gitignore.
+</Callout>
+
+## Configure M-Pesa Client
+
+Create a server configuration file:
+
+<Tabs items={["FastAPI", "Django", "Flask"]}>
+  <Tab value="FastAPI">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Django">
+```python title="myapp/mpesa.py"
+from singularity_payments import create_mpesa
+from django.conf import settings
+
+mpesa = create_mpesa(
+    consumer_key=settings.MPESA_CONFIG['CONSUMER_KEY'],
+    consumer_secret=settings.MPESA_CONFIG['CONSUMER_SECRET'],
+    passkey=settings.MPESA_CONFIG['PASSKEY'],
+    shortcode=settings.MPESA_CONFIG['SHORTCODE'],
+    environment=settings.MPESA_CONFIG['ENVIRONMENT'],
+    callback_url=settings.MPESA_CONFIG['CALLBACK_URL'],
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Flask">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Sanic">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Starlette">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Litestar">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+
+  <Tab value="Quart">
+```python title="app/mpesa.py"
+from singularity_payments import create_mpesa
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment=os.getenv("MPESA_ENVIRONMENT", "sandbox"),
+    callback_url=os.getenv("CALLBACK_URL"),
+    callback_options={
+        "on_success": lambda data: print(f"Payment successful: {data}"),
+        "on_failure": lambda data: print(f"Payment failed: {data}")
+    }
+)
+```
+  </Tab>
+</Tabs>
+
+## Register M-Pesa Routes
+
+Integrate M-Pesa routes into your application:
+
+<Tabs items={["FastAPI", "Django", "Flask"]}>
+  <Tab value="FastAPI">
+```python title="main.py"
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.mpesa import mpesa
+
+app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register M-Pesa routes
+app.include_router(mpesa.router, prefix="/api/mpesa", tags=["M-Pesa"])
+
+@app.get("/")
+async def root():
+    return {"message": "M-Pesa Payment API"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+  </Tab>
+
+  <Tab value="Django">
+```python title="myapp/urls.py"
+from django.urls import path, include
+from .mpesa import mpesa
+
+urlpatterns = [
+    path('api/mpesa/', include(mpesa.urls)),
+]
+```
+
+```python title="myproject/urls.py"
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('myapp.urls')),
+]
+```
+  </Tab>
+
+  <Tab value="Flask">
+```python title="app.py"
+from flask import Flask
+from flask_cors import CORS
+from app.mpesa import mpesa
+
+app = Flask(__name__)
+CORS(app)
+
+# Register M-Pesa blueprint
+app.register_blueprint(mpesa.blueprint, url_prefix="/api/mpesa")
+
+@app.route("/")
+def index():
+    return {"message": "M-Pesa Payment API"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
+```
+  </Tab>
+
+  <Tab value="Sanic">
+```python title="app.py"
+from sanic import Sanic
+from sanic_cors import CORS
+from app.mpesa import mpesa
+
+app = Sanic("mpesa_app")
+CORS(app)
+
+# Register M-Pesa blueprint
+app.blueprint(mpesa.blueprint, url_prefix="/api/mpesa")
+
+@app.route("/")
+async def index(request):
+    return {"message": "M-Pesa Payment API"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
+```
+  </Tab>
+
+  <Tab value="Starlette">
+```python title="app.py"
+from starlette.applications import Starlette
+from starlette.middleware.cors import CORSMiddleware
+from starlette.routing import Mount, Route
+from starlette.responses import JSONResponse
+from app.mpesa import mpesa
+
+async def homepage(request):
+    return JSONResponse({"message": "M-Pesa Payment API"})
+
+routes = [
+    Route("/", homepage),
+    Mount("/api/mpesa", mpesa.routes),
+]
+
+app = Starlette(routes=routes)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+  </Tab>
+
+  <Tab value="Litestar">
+```python title="app.py"
+from litestar import Litestar, get
+from litestar.config.cors import CORSConfig
+from app.mpesa import mpesa
+
+@get("/")
+async def index() -> dict:
+    return {"message": "M-Pesa Payment API"}
+
+app = Litestar(
+    route_handlers=[index, mpesa.controller],
+    cors_config=CORSConfig(allow_origins=["*"]),
+)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+  </Tab>
+
+  <Tab value="Quart">
+```python title="app.py"
+from quart import Quart
+from quart_cors import cors
+from app.mpesa import mpesa
+
+app = Quart(__name__)
+app = cors(app)
+
+# Register M-Pesa blueprint
+app.register_blueprint(mpesa.blueprint, url_prefix="/api/mpesa")
+
+@app.route("/")
+async def index():
+    return {"message": "M-Pesa Payment API"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
+```
+  </Tab>
+</Tabs>
+
+## Initiate an STK Push
+
+Here's how to initiate a payment from your application:
+
+```python
+# Using async/await
+result = await mpesa.stkPush(
+    amount=1,
+    phone_number="+254740185793",
+    account_reference="singularity",
+    transaction_desc="Quick Start"
+)
+
+if result.error:
+    print(f"Error: {result.error}")
+else:
+    print(f"Success: {result.data}")
+```
+
+## Complete Example
+
+<Tabs items={["FastAPI", "Flask", "Django"]}>
+  <Tab value="FastAPI">
+```python title="main.py"
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from app.mpesa import mpesa
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(mpesa.router, prefix="/api/mpesa", tags=["M-Pesa"])
+
+class PaymentRequest(BaseModel):
+    phone_number: str
+    amount: int
+    account_reference: str = "singularity"
+    transaction_desc: str = "Payment"
+
+@app.post("/pay")
+async def initiate_payment(payment: PaymentRequest):
+    result = await mpesa.stkPush(
+        amount=payment.amount,
+        phone_number=payment.phone_number,
+        account_reference=payment.account_reference,
+        transaction_desc=payment.transaction_desc
+    )
+
+    if result.error:
+        raise HTTPException(status_code=400, detail=result.error)
+
+    return result.data
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+  </Tab>
+
+  <Tab value="Flask">
+```python title="app.py"
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from app.mpesa import mpesa
+
+app = Flask(__name__)
+CORS(app)
+
+app.register_blueprint(mpesa.blueprint, url_prefix="/api/mpesa")
+
+@app.route("/pay", methods=["POST"])
+def initiate_payment():
+    data = request.get_json()
+
+    result = mpesa.stkPush(
+        amount=data["amount"],
+        phone_number=data["phone_number"],
+        account_reference=data.get("account_reference", "singularity"),
+        transaction_desc=data.get("transaction_desc", "Payment")
+    )
+
+    if result.error:
+        return jsonify({"error": result.error}), 400
+
+    return jsonify(result.data)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000, debug=True)
+```
+  </Tab>
+
+  <Tab value="Django">
+```python title="myapp/views.py"
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from .mpesa import mpesa
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def initiate_payment(request):
+    data = json.loads(request.body)
+
+    result = mpesa.stkPush(
+        amount=data["amount"],
+        phone_number=data["phone_number"],
+        account_reference=data.get("account_reference", "singularity"),
+        transaction_desc=data.get("transaction_desc", "Payment")
+    )
+
+    if result.error:
+        return JsonResponse({"error": result.error}, status=400)
+
+    return JsonResponse(result.data)
+```
+
+```python title="myapp/urls.py"
+from django.urls import path, include
+from . import views
+from .mpesa import mpesa
+
+urlpatterns = [
+    path('pay/', views.initiate_payment),
+    path('api/mpesa/', include(mpesa.urls)),
+]
+```
+  </Tab>
+</Tabs>
+
+## Test Your Integration
+
+<Steps>
+<Step>
+
+Start your development server
+
+<Tabs items={["FastAPI", "Flask", "Django"]}>
+  <Tab value="FastAPI">
+```bash
+uvicorn main:app --reload
+```
+  </Tab>
+  <Tab value="Flask">
+```bash
+flask run
+```
+  </Tab>
+  <Tab value="Django">
+```bash
+python manage.py runserver
+```
+  </Tab>
+</Tabs>
+
+</Step>
+<Step>
+
+Start ngrok in another terminal
+
+```bash
+ngrok http 8000
+```
+
+</Step>
+<Step>
+
+Update your `.env` with the ngrok URL and restart your dev server
+
+</Step>
+<Step>
+
+Test the payment endpoint using curl or Postman
+
+```bash
+curl -X POST http://localhost:8000/pay \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+254740185793",
+    "amount": 1,
+    "account_reference": "singularity",
+    "transaction_desc": "Quick Start"
+  }'
+```
+
+</Step>
+
+<Step>
+
+Check your phone for the STK Push prompt
+
+</Step>
+<Step>
+
+Enter your M-Pesa PIN to complete the payment
+
+</Step>
+</Steps>
+
+<Callout type="info">
+  In sandbox mode, use the test credentials provided by Safaricom Daraja.
+</Callout>
+
+## What's Next
+
+- Explore [API Reference](/docs/api)
+- Learn about [Advanced Configuration](/docs/getting-started/configuration)
+- Check out [Framework Integrations](/integrations/fastapi)

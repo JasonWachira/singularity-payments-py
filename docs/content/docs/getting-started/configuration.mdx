@@ -1,0 +1,301 @@
+---
+title: Configuration
+description: Complete guide to configuring Singularity Payments SDK for M-Pesa integration
+---
+
+## Overview
+
+The SDK requires M-Pesa API credentials from Safaricom's Developer Portal. Configuration is framework-agnostic and works the same across all packages.
+
+## Basic Configuration
+
+All M-Pesa integrations require these core credentials for STK Push:
+
+```bash
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_SHORTCODE=174379
+MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_ENVIRONMENT=sandbox
+MPESA_CALLBACK_URL=https://yourdomain.com/api/mpesa/callback
+```
+
+### SDK Initialization
+
+```python
+from singularity_payments import MpesaClient
+import os
+
+client = MpesaClient(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment="sandbox",
+    callback_url=os.getenv("MPESA_CALLBACK_URL")
+)
+```
+
+### Using python-dotenv
+
+```python
+from dotenv import load_dotenv
+from singularity_payments import MpesaClient
+import os
+
+# Load environment variables
+load_dotenv()
+
+client = MpesaClient(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment="sandbox",
+    callback_url=os.getenv("MPESA_CALLBACK_URL")
+)
+```
+
+## Getting M-Pesa Credentials
+
+### Step 1: Create a Safaricom Developer Account
+
+1. Go to [Safaricom Developer Portal](https://developer.safaricom.co.ke/)
+2. Click **Sign Up** and create an account
+3. Verify your email address
+4. Log in to your account
+
+### Step 2: Create an App
+
+1. Navigate to **[My Apps](https://developer.safaricom.co.ke/dashboard/myapps)**
+2. Click **Create Sandbox App**
+3. Fill in the app details:
+   - **App Name**: Your application name
+   - **Description**: Brief description of your app
+4. Select **Lipa Na M-Pesa (STK Push)**
+5. Click **Create App**
+
+### Step 3: Get Your Credentials
+
+After creating your app, you'll receive:
+
+- **Consumer Key**: Found on your app's page
+- **Consumer Secret**: Found on your app's page (click to reveal)
+
+### Sandbox Test Credentials
+
+```bash
+MPESA_CONSUMER_KEY=your_sandbox_consumer_key
+MPESA_CONSUMER_SECRET=your_sandbox_consumer_secret
+MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_SHORTCODE=174379
+MPESA_ENVIRONMENT=sandbox
+MPESA_CALLBACK_URL=https://your-ngrok-url.ngrok-free.app/api/mpesa/callback
+```
+
+## Setting Up Tunneling for Development
+
+Your callback URL must be publicly accessible. For local development, use a tunneling service:
+
+### Using ngrok
+
+1. Install ngrok:
+
+```bash
+# Download from https://ngrok.com/download
+# Or use package manager
+brew install ngrok  # macOS
+sudo snap install ngrok  # Linux
+choco install ngrok  # Windows
+```
+
+2. Start your development server:
+
+```bash
+# FastAPI example
+uvicorn main:app --reload
+
+# Flask example
+flask run
+
+# Django example
+python manage.py runserver
+```
+
+3. In a new terminal, start ngrok:
+
+```bash
+ngrok http 8000
+```
+
+4. Copy the HTTPS URL (e.g., `https://abc123.ngrok-free.app`)
+
+5. Update your `.env`:
+
+```bash
+MPESA_CALLBACK_URL=https://abc123.ngrok-free.app/api/mpesa/callback
+```
+
+### Alternative Tunneling Services
+
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
+- [LocalTunnel](https://localtunnel.github.io/www/)
+- [serveo.net](https://serveo.net/)
+
+## Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+MPESA_SHORTCODE=174379
+MPESA_ENVIRONMENT=sandbox
+MPESA_CALLBACK_URL=https://yourdomain.com/api/mpesa/callback
+```
+
+Add `.env` to your `.gitignore`:
+
+```bash
+.env
+.env.local
+.env.production
+*.env
+```
+
+## Framework-Specific Settings
+
+### FastAPI
+
+```python
+from fastapi import FastAPI
+from singularity_payments import MpesaClient
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    mpesa_consumer_key: str
+    mpesa_consumer_secret: str
+    mpesa_passkey: str
+    mpesa_shortcode: str
+    mpesa_environment: str = "sandbox"
+    mpesa_callback_url: str
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+
+app = FastAPI()
+
+client = MpesaClient(
+    consumer_key=settings.mpesa_consumer_key,
+    consumer_secret=settings.mpesa_consumer_secret,
+    passkey=settings.mpesa_passkey,
+    shortcode=settings.mpesa_shortcode,
+    environment=settings.mpesa_environment,
+    callback_url=settings.mpesa_callback_url
+)
+```
+
+### Django
+
+```python
+# settings.py
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MPESA_CONFIG = {
+    'CONSUMER_KEY': os.getenv('MPESA_CONSUMER_KEY'),
+    'CONSUMER_SECRET': os.getenv('MPESA_CONSUMER_SECRET'),
+    'PASSKEY': os.getenv('MPESA_PASSKEY'),
+    'SHORTCODE': os.getenv('MPESA_SHORTCODE'),
+    'ENVIRONMENT': os.getenv('MPESA_ENVIRONMENT', 'sandbox'),
+    'CALLBACK_URL': os.getenv('MPESA_CALLBACK_URL'),
+}
+
+# views.py
+from django.conf import settings
+from singularity_payments import MpesaClient
+
+client = MpesaClient(
+    consumer_key=settings.MPESA_CONFIG['CONSUMER_KEY'],
+    consumer_secret=settings.MPESA_CONFIG['CONSUMER_SECRET'],
+    passkey=settings.MPESA_CONFIG['PASSKEY'],
+    shortcode=settings.MPESA_CONFIG['SHORTCODE'],
+    environment=settings.MPESA_CONFIG['ENVIRONMENT'],
+    callback_url=settings.MPESA_CONFIG['CALLBACK_URL']
+)
+```
+
+### Flask
+
+```python
+from flask import Flask
+from singularity_payments import MpesaClient
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+
+app.config['MPESA_CONSUMER_KEY'] = os.getenv('MPESA_CONSUMER_KEY')
+app.config['MPESA_CONSUMER_SECRET'] = os.getenv('MPESA_CONSUMER_SECRET')
+app.config['MPESA_PASSKEY'] = os.getenv('MPESA_PASSKEY')
+app.config['MPESA_SHORTCODE'] = os.getenv('MPESA_SHORTCODE')
+app.config['MPESA_ENVIRONMENT'] = os.getenv('MPESA_ENVIRONMENT', 'sandbox')
+app.config['MPESA_CALLBACK_URL'] = os.getenv('MPESA_CALLBACK_URL')
+
+client = MpesaClient(
+    consumer_key=app.config['MPESA_CONSUMER_KEY'],
+    consumer_secret=app.config['MPESA_CONSUMER_SECRET'],
+    passkey=app.config['MPESA_PASSKEY'],
+    shortcode=app.config['MPESA_SHORTCODE'],
+    environment=app.config['MPESA_ENVIRONMENT'],
+    callback_url=app.config['MPESA_CALLBACK_URL']
+)
+```
+
+## Advanced Configuration
+
+<Cards>
+  <Card title="Advanced Configuration" href="/api/advanced-configuration">
+    Learn about B2C, B2B, reversals, and advanced options
+  </Card>
+</Cards>
+
+## Framework-Specific Integration Guides
+
+<Cards>
+  <Card title="FastAPI" href="/integrations/fastapi">
+    Complete integration guide for FastAPI applications
+  </Card>
+
+  <Card title="Django" href="/integrations/django">
+    Integration guide for Django applications
+  </Card>
+
+  <Card title="Flask" href="/integrations/flask">
+    Integration guide for Flask applications
+  </Card>
+
+  <Card title="Sanic" href="/integrations/sanic">
+    Integration guide for Sanic applications
+  </Card>
+
+  <Card title="Starlette" href="/integrations/starlette">
+    Integration guide for Starlette applications
+  </Card>
+
+  <Card title="Litestar" href="/integrations/litestar">
+    Integration guide for Litestar applications
+  </Card>
+
+  <Card title="Quart" href="/integrations/quart">
+    Integration guide for Quart applications
+  </Card>
+</Cards>

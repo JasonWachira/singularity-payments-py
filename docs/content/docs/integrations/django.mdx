@@ -1,0 +1,444 @@
+---
+title: Django
+description: Singularity payments can be integrated into your Django application with ease.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+
+## Install the packages
+
+<Tabs items={["pip", "poetry", "pipenv"]}>
+  <Tab value="pip">
+```bash
+pip install singularity-payments[django] python-dotenv
+```
+  </Tab>
+  <Tab value="poetry">
+```bash
+poetry add singularity-payments[django] python-dotenv
+```
+  </Tab>
+  <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[django] python-dotenv
+```
+  </Tab>
+</Tabs>
+
+## Install Ngrok
+
+The API requires a publicly accessible url for callbacks. You can use [ngrok](https://ngrok.com/) to expose your local development server to the internet.
+
+```bash
+# macOS
+brew install ngrok
+
+# Linux
+sudo snap install ngrok
+
+# Windows
+choco install ngrok
+```
+
+<Card
+  title="Guide on Obtaining M-pesa Credentials"
+  description="Learn how to obtain M-pesa credentials for your application."
+  href="/docs/daraja/quickstart"
+/>
+
+## Configure your environmental variables
+
+```bash title=".env"
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_SHORTCODE=174379  # For STK Push Testing in Sandbox (Replace with your shortcode in production)
+MPESA_PASSKEY=your_passkey
+MPESA_ENVIRONMENT=sandbox  # or 'production'
+MPESA_CALLBACK_URL=https://your-app-url.com/api/mpesa/callback
+
+# For STK Push you can just include the 6 above
+# Required for B2C, B2B, Reversal, Transaction Status, and Account Balance
+MPESA_INITIATOR_NAME=testapi  # Initiator Name for Sandbox
+MPESA_SECURITY_CREDENTIAL=your_security_credential
+MPESA_RESULT_URL=https://your-app-url.com/api/mpesa/result
+```
+
+## Understanding Shortcodes
+
+Your **shortcode** is your business number in the M-Pesa system, it's what customers see when making payments.
+
+### Sandbox (Testing)
+
+Use M-Pesa's provided test shortcodes:
+
+- `174379` - For STK Push testing
+
+These are pre-configured and ready to use immediately.
+
+### Production (Live)
+
+You'll need to apply for your own shortcode through Safaricom's M-Pesa portal:
+
+1. Submit business registration documents
+2. Complete KYC verification
+3. Wait for approval (can take several days)
+4. Receive your unique 5-7 digit shortcode
+
+**Important:** Never mix sandbox and production credentials. Always use the matching shortcode for your environment.
+
+```bash
+# Sandbox
+MPESA_SHORTCODE=174379
+
+# Production
+MPESA_SHORTCODE=123456  # Your approved business number
+```
+
+## Configure Django Settings
+
+Update your Django settings to load environment variables:
+
+```python title="myproject/settings.py"
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Build paths inside the project
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# M-Pesa Configuration
+MPESA_CONFIG = {
+    'CONSUMER_KEY': os.getenv('MPESA_CONSUMER_KEY'),
+    'CONSUMER_SECRET': os.getenv('MPESA_CONSUMER_SECRET'),
+    'PASSKEY': os.getenv('MPESA_PASSKEY'),
+    'SHORTCODE': os.getenv('MPESA_SHORTCODE'),
+    'ENVIRONMENT': os.getenv('MPESA_ENVIRONMENT', 'sandbox'),
+    'CALLBACK_URL': os.getenv('MPESA_CALLBACK_URL'),
+
+    # Required for B2C, B2B, Reversal, Transaction Status, and Account Balance
+    'INITIATOR_NAME': os.getenv('MPESA_INITIATOR_NAME', 'testapi'),
+    'SECURITY_CREDENTIAL': os.getenv('MPESA_SECURITY_CREDENTIAL'),
+    'RESULT_URL': os.getenv('MPESA_RESULT_URL'),
+    'TIMEOUT_URL': os.getenv('MPESA_TIMEOUT_URL'),
+}
+
+# Add to INSTALLED_APPS
+INSTALLED_APPS = [
+    # ... other apps
+    'mpesa_app',  # Your M-Pesa app
+]
+```
+
+## Configure the SDK
+
+Create a new Django app for M-Pesa integration:
+
+```bash
+python manage.py startapp mpesa_app
+```
+
+Create the M-Pesa client configuration:
+
+```python title="mpesa_app/mpesa.py"
+from singularity_payments import create_mpesa
+from django.conf import settings
+
+def handle_success(data):
+    """Handle successful payment callback"""
+    print("Payment successful:", {
+        "amount": data.get("amount"),
+        "phone": data.get("phone_number"),
+        "receipt": data.get("mpesa_receipt_number"),
+        "transaction_date": data.get("transaction_date"),
+    })
+
+    # TODO: Save to database
+    # from .models import Transaction
+    # Transaction.objects.filter(
+    #     checkout_request_id=data.get("checkout_request_id")
+    # ).update(
+    #     status='completed',
+    #     mpesa_receipt_number=data.get("mpesa_receipt_number")
+    # )
+
+def handle_failure(data):
+    """Handle failed payment callback"""
+    print("Payment failed:", {
+        "result_code": data.get("result_code"),
+        "result_desc": data.get("result_description"),
+    })
+
+    # TODO: Update database
+    # from .models import Transaction
+    # Transaction.objects.filter(
+    #     checkout_request_id=data.get("checkout_request_id")
+    # ).update(status='failed')
+
+mpesa = create_mpesa(
+    consumer_key=settings.MPESA_CONFIG['CONSUMER_KEY'],
+    consumer_secret=settings.MPESA_CONFIG['CONSUMER_SECRET'],
+    passkey=settings.MPESA_CONFIG['PASSKEY'],
+    shortcode=settings.MPESA_CONFIG['SHORTCODE'],
+    environment=settings.MPESA_CONFIG['ENVIRONMENT'],
+    callback_url=settings.MPESA_CONFIG['CALLBACK_URL'],
+
+    # Required for B2C, B2B, Reversal, Transaction Status, and Account Balance
+    initiator_name=settings.MPESA_CONFIG['INITIATOR_NAME'],
+    security_credential=settings.MPESA_CONFIG['SECURITY_CREDENTIAL'],
+    result_url=settings.MPESA_CONFIG['RESULT_URL'],
+    timeout_url=settings.MPESA_CONFIG.get('TIMEOUT_URL'),
+
+    callback_options={
+        "on_success": handle_success,
+        "on_failure": handle_failure,
+    }
+)
+```
+
+## Create M-Pesa Views
+
+Create views to handle M-Pesa operations:
+
+```python title="mpesa_app/views.py"
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from .mpesa import mpesa
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def initiate_stkPush(request):
+    """Initiate STK Push payment"""
+    try:
+        data = json.loads(request.body)
+
+        result = mpesa.stkPush(
+            amount=data.get("amount"),
+            phone_number=data.get("phone_number"),
+            account_reference=data.get("account_reference", "Payment"),
+            transaction_desc=data.get("transaction_desc", "Payment")
+        )
+
+        if result.error:
+            return JsonResponse({"error": result.error}, status=400)
+
+        return JsonResponse(result.data)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def stkPush_callback(request):
+    """Handle M-Pesa STK Push callback"""
+    # This is handled automatically by the SDK
+    # You can add custom logic here if needed
+    return JsonResponse({"status": "success"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def query_stk_status(request):
+    """Query STK Push transaction status"""
+    try:
+        data = json.loads(request.body)
+
+        result = mpesa.stkQuery(
+            checkout_request_id=data.get("checkout_request_id")
+        )
+
+        if result.error:
+            return JsonResponse({"error": result.error}, status=400)
+
+        return JsonResponse(result.data)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+```
+
+## Configure URL Patterns
+
+Set up URL routing for M-Pesa endpoints:
+
+```python title="mpesa_app/urls.py"
+from django.urls import path
+from . import views
+
+app_name = 'mpesa'
+
+urlpatterns = [
+    path('stk-push/', views.initiate_stkPush, name='stkPush'),
+    path('callback/', views.stkPush_callback, name='callback'),
+    path('query/', views.query_stk_status, name='query'),
+    path('mpesa/', include('singularity_payments.django.urls')
+]
+```
+
+Include the M-Pesa URLs in your main URL configuration:
+
+```python title="myproject/urls.py"
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('mpesa_app.urls')),
+]
+```
+
+## Optional: Create Transaction Model
+
+Create a model to track M-Pesa transactions:
+
+```python title="mpesa_app/models.py"
+from django.db import models
+from django.utils import timezone
+
+class MpesaTransaction(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    checkout_request_id = models.CharField(max_length=100, unique=True)
+    merchant_request_id = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    account_reference = models.CharField(max_length=100)
+    transaction_desc = models.CharField(max_length=200)
+
+    mpesa_receipt_number = models.CharField(max_length=100, blank=True, null=True)
+    transaction_date = models.DateTimeField(null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    result_code = models.CharField(max_length=10, blank=True)
+    result_description = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['checkout_request_id']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.phone_number} - {self.amount} - {self.status}"
+```
+
+Run migrations:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+Update the callback handlers to save to database:
+
+```python title="mpesa_app/mpesa.py"
+from singularity_payments import create_mpesa
+from django.conf import settings
+from .models import MpesaTransaction
+
+def handle_success(data):
+    """Handle successful payment callback"""
+    MpesaTransaction.objects.filter(
+        checkout_request_id=data.get("checkout_request_id")
+    ).update(
+        status='completed',
+        mpesa_receipt_number=data.get("mpesa_receipt_number"),
+        transaction_date=data.get("transaction_date"),
+        result_code=data.get("result_code"),
+        result_description=data.get("result_description")
+    )
+
+    print(f"Payment successful: {data.get('mpesa_receipt_number')}")
+
+def handle_failure(data):
+    """Handle failed payment callback"""
+    MpesaTransaction.objects.filter(
+        checkout_request_id=data.get("checkout_request_id")
+    ).update(
+        status='failed',
+        result_code=data.get("result_code"),
+        result_description=data.get("result_description")
+    )
+
+    print(f"Payment failed: {data.get('result_description')}")
+
+# ... rest of mpesa configuration
+```
+
+## Start Ngrok
+
+The Daraja API requires a publicly accessible callback URL for callbacks:
+
+```bash
+ngrok http 8000  # whatever port your Django server is running on
+```
+
+Copy paste the URL from ngrok into the env variable `MPESA_CALLBACK_URL`:
+
+```bash title=".env"
+MPESA_CALLBACK_URL=https://your-ngrok-url.ngrok-free.app/api/mpesa/callback  # make sure you include the /api/mpesa/callback
+```
+
+## Run Your Django Server
+
+```bash
+python manage.py runserver
+```
+
+## Test the Integration
+
+Test your M-Pesa integration using curl:
+
+```bash
+curl -X POST http://localhost:8000/api/mpesa/stk-push/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+254740185793",
+    "amount": 1,
+    "account_reference": "TestPayment",
+    "transaction_desc": "Test transaction"
+  }'
+```
+
+## Example: Complete Django App Structure
+
+```
+myproject/
+├── manage.py
+├── myproject/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── mpesa_app/
+│   ├── __init__.py
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── mpesa.py
+│   └── migrations/
+├── .env
+└── requirements.txt
+```
+
+## Next Steps
+
+- [API Reference](/docs/api) - Explore all available M-Pesa operations
+- [Advanced Configuration](/docs/advanced-configuration) - Learn about B2C, B2B, and more
+- [Django Admin Integration](/docs/django/admin) - Manage transactions through Django admin

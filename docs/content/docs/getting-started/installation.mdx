@@ -1,0 +1,291 @@
+---
+title: Installation
+description: Learn how to install the M-Pesa SDK for Python.
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Installation
+
+Get started with Singularity Payments by installing the appropriate package for your project.
+
+## Prerequisites
+
+Before installing, make sure you have:
+
+- Python 3.8 or higher installed
+- pip (Python package manager)
+
+## Choose Your Package
+
+<Cards>
+  <Card
+    title="Server-Side"
+    description="For FastAPI, Django, Flask, Sanic, Starlette, Litestar, Quart backends"
+    href="#server-side"
+  />
+  <Card
+    title="Async Support"
+    description="Full async/await support for modern Python applications"
+    href="#async-support"
+  />
+</Cards>
+
+## Server-Side
+
+<Tabs items={["FastAPI", "Django", "Flask", "Sanic", "Starlette", "Litestar", "Quart"]}>
+  <Tab value="FastAPI">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[fastapi]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[fastapi]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[fastapi]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Django">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[django]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[django]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[django]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Flask">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[flask]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[flask]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[flask]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Sanic">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[sanic]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[sanic]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[sanic]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Starlette">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[starlette]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[starlette]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[starlette]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Litestar">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[litestar]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[litestar]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[litestar]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Quart">
+    <Tabs items={["pip", "poetry", "pipenv"]}>
+      <Tab value="pip">
+```bash
+pip install singularity-payments[quart]
+```
+      </Tab>
+      <Tab value="poetry">
+```bash
+poetry add singularity-payments[quart]
+```
+      </Tab>
+      <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[quart]
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+## Core Package (Framework Agnostic)
+
+If you want to use the SDK without framework-specific integrations:
+
+<Tabs items={["pip", "poetry", "pipenv"]}>
+  <Tab value="pip">
+```bash
+pip install singularity-payments
+```
+  </Tab>
+  <Tab value="poetry">
+```bash
+poetry add singularity-payments
+```
+  </Tab>
+  <Tab value="pipenv">
+```bash
+pipenv install singularity-payments
+```
+  </Tab>
+</Tabs>
+
+## Async Support
+
+The SDK fully supports async/await for non-blocking operations. For async Redis support (recommended for rate limiting):
+
+<Tabs items={["pip", "poetry", "pipenv"]}>
+  <Tab value="pip">
+```bash
+pip install singularity-payments[async]
+```
+  </Tab>
+  <Tab value="poetry">
+```bash
+poetry add singularity-payments[async]
+```
+  </Tab>
+  <Tab value="pipenv">
+```bash
+pipenv install singularity-payments[async]
+```
+  </Tab>
+</Tabs>
+
+## Environment Variables
+
+After installation, set up your environment variables:
+
+```bash title=".env"
+MPESA_CONSUMER_KEY=your_consumer_key
+MPESA_CONSUMER_SECRET=your_consumer_secret
+MPESA_SHORTCODE=your_shortcode  # Use 600998 for sandbox
+MPESA_PASSKEY=your_passkey  # Use bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919 for sandbox
+MPESA_ENVIRONMENT=sandbox  # or 'production'
+```
+
+<Callout type="warn">
+  Never commit your .env file to version control. Add it to .gitignore.
+</Callout>
+
+## Loading Environment Variables
+
+You can use `python-dotenv` to load environment variables:
+
+<Tabs items={["pip", "poetry", "pipenv"]}>
+  <Tab value="pip">
+```bash
+pip install python-dotenv
+```
+  </Tab>
+  <Tab value="poetry">
+```bash
+poetry add python-dotenv
+```
+  </Tab>
+  <Tab value="pipenv">
+```bash
+pipenv install python-dotenv
+```
+  </Tab>
+</Tabs>
+
+Then in your code:
+
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+consumer_key = os.getenv("MPESA_CONSUMER_KEY")
+consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
+```
+
+## Verify Installation
+
+Verify the installation by running:
+
+```python
+import singularity_payments
+
+print(singularity_payments.__version__)
+```
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Quick Start"
+    description="Make your first payment in minutes"
+    href="/docs/getting-started/quick-start"
+  />
+  <Card
+    title="Configuration"
+    description="Learn about all configuration options"
+    href="/docs/getting-started/configuration"
+  />
+</Cards>

@@ -1,0 +1,194 @@
+---
+title: Introduction
+description: A modern, developer-friendly M-Pesa SDK that makes mobile payments integration effortless in Python.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { Cards, Card } from "fumadocs-ui/components/card";
+
+# Singularity Payments
+
+Singularity Payments is a modern Python Software Development Kit built on top of [Safaricom's Daraja API](https://developer.safaricom.co.ke/) that simplifies M-Pesa integration for developers. Whether you're building an e-commerce platform, a SaaS application, or any service that requires mobile payments, this SDK provides everything you need.
+
+## Features?
+
+While the [Daraja API](https://developer.safaricom.co.ke/APIs) is powerful, integrating it directly comes with several challenges that we aim to solve.
+
+## **Type Safety First**
+
+Built with Python type hints and Pydantic, you get full IDE autocomplete support and catch errors before they reach production. No more guessing API parameters or dealing with cryptic runtime errors.
+
+```python
+from singularity_payments import MpesaClient
+
+mpesa_client = MpesaClient(
+    consumer_key=os.getenv("MPESA_KEY"),
+    consumer_secret=os.getenv("MPESA_SECRET")
+)
+
+response = await mpesa_client.stkPush(
+    amount=1,
+    phone_number=phone,
+    account_reference="Singularity",
+    transaction_desc="Sponsorship"
+)
+
+# Type hints help catch errors
+response = await mpesa_client.stkPush(
+    amount="1",  # IDE will warn about incorrect type
+    phone="254712345678"
+)
+```
+
+## **Simplified Authentication**
+
+No need to manually handle OAuth tokens, token refresh, or authentication flows. The SDK manages all of this automatically.
+
+```python
+from singularity_payments import MpesaClient
+
+mpesa_client = MpesaClient(
+    consumer_key=os.getenv("MPESA_KEY"),
+    consumer_secret=os.getenv("MPESA_SECRET")
+)
+
+# Authentication handled automatically
+await mpesa_client.stkPush({})
+```
+
+## **Built-in Rate Limiting for Distributed Systems**
+
+Protect your M-Pesa integration from API rate limits with built-in rate limiting that works seamlessly across multiple servers and serverless functions using Redis. Perfect for production applications running on platforms like AWS Lambda, Google Cloud Functions, or Kubernetes clusters.
+
+```python
+import redis.asyncio as redis
+from singularity_payments import create_mpesa
+
+redis_client = redis.from_url(
+    os.getenv("REDIS_URL"),
+    encoding="utf-8",
+    decode_responses=True
+)
+
+mpesa = create_mpesa(
+    consumer_key=os.getenv("MPESA_CONSUMER_KEY"),
+    consumer_secret=os.getenv("MPESA_CONSUMER_SECRET"),
+    passkey=os.getenv("MPESA_PASSKEY"),
+    shortcode=os.getenv("MPESA_SHORTCODE"),
+    environment="sandbox",
+    rate_limit_options={
+        "enabled": True,
+        "max_requests": 100,
+        "window_ms": 60000,
+        "redis": redis_client
+    }
+)
+```
+
+### Why Redis Rate Limiting Matters
+
+**Without Redis (In-Memory Only)**
+- Rate limits reset when your server restarts
+- Each server instance has separate limits
+- Serverless functions can't share rate limit state
+- Risk of exceeding M-Pesa API limits in distributed deployments
+
+**With Redis Rate Limiting**
+- Shared rate limit state across all servers
+- Survives server restarts and redeployments
+- Works perfectly with serverless architectures
+- Automatic synchronization across multiple regions
+- Prevents API limit violations in high-traffic scenarios
+
+### Distributed System Support
+
+Whether you're running a single server or a globally distributed application, Redis-based rate limiting ensures consistent API usage tracking:
+
+- **Serverless Functions**: Share rate limits across Lambda, Google Cloud Functions, or Azure Functions
+- **Kubernetes Clusters**: Coordinate limits across multiple pods and nodes
+- **Multi-Region Deployments**: Synchronize limits globally with Redis replication
+- **Auto-Scaling**: New instances immediately respect existing rate limits
+
+### Flexible Configuration
+
+```python
+rate_limit_options = {
+    "enabled": True,
+    "max_requests": 100,
+    "window_ms": 60000,
+    "redis": redis_client
+}
+```
+
+Configure rate limits based on your M-Pesa plan and traffic patterns. The SDK automatically tracks requests per endpoint and enforces limits before making API calls, preventing costly rate limit errors.
+
+## **Intuitive API Design**
+
+Clean, Pythonic API that follows Python conventions and best practices. No need to study complex Daraja documentation for hours.
+
+## **Built-in Error Handling**
+
+Comprehensive error handling with descriptive messages. Know exactly what went wrong and how to fix it.
+
+## **Framework Agnostic**
+
+Works seamlessly with any Python web framework or library:
+
+- FastAPI
+- Django
+- Flask
+- Sanic
+- Starlette
+- Litestar
+- Quart
+- Tornado
+
+**Industry Standard**: Built following best practices from the [Daraja API documentation](https://developer.safaricom.co.ke/Documentation) with additional safeguards and optimizations.
+
+## Comparison
+
+| Feature | Singularity Payments | Raw Daraja API |
+|-------------------------|------------------------|--------------------------|
+| Type Hints Support | ✅ Full Pydantic models | ❌ Manual typing |
+| Auto Authentication | ✅ Handled automatically | ❌ Manual token management |
+| Distributed Rate Limiting | ✅ Redis-based | ❌ Manual implementation |
+| Error Handling | ✅ Descriptive errors | ❌ Raw API errors |
+| Documentation | ✅ Comprehensive | ⚠️ Basic |
+| Framework Support | ✅ All frameworks | ✅ All frameworks |
+| Async/Await Support | ✅ Full async support | ⚠️ Requires custom setup |
+| Serverless Compatible | ✅ Full support | ⚠️ Requires custom setup |
+
+## What You Can Build
+
+With Singularity Payments, you can implement:
+
+- **E-commerce Checkouts** - Accept payments for online stores
+- **SaaS Subscriptions** - Process recurring subscription payments
+- **Ticket Sales** - Sell event tickets and generate payment confirmations
+- **Point of Sale** - Build POS systems for retail
+- **Peer-to-Peer Transfers** - Enable money transfers between users
+- **In-App Purchases** - Monetize mobile applications
+- **Bill Payments** - Process utility and service bill payments
+- **Payroll Systems** - Automate salary disbursements
+
+## Getting Started
+
+Ready to integrate M-Pesa payments? Get started in just 5 minutes:
+
+Before you begin, you'll need:
+
+- A [Safaricom Daraja account](https://developer.safaricom.co.ke/)
+- Your Consumer Key and Consumer Secret
+- A registered M-Pesa shortcode (or use sandbox for testing)
+- Python 3.8 or higher
+
+## Community & Support
+
+- [GitHub Repository](https://github.com/singularityke/singularity-payments-python)
+- [Report Issues](https://github.com/singularityke/singularity-payments-python/issues)
+- [Discussions](https://github.com/singularityke/singularity-payments-python/discussions)
+- [Daraja API Docs](https://developer.safaricom.co.ke/Documentation)
+
+---
+
+**Ready to start?** Head over to the [Installation Guide](/docs/getting-started/installation) to set up Singularity Payments in your project.
