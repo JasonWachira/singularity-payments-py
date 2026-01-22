@@ -82,7 +82,7 @@ mpesa = MpesaClient(
 ### 4. Initiate Payment
 
 ```python
-response = mpesa.stk_push(
+response = mpesa.stkPush(
     amount=100,
     phone_number="254712345678",
     account_reference="INV-001",
@@ -286,7 +286,7 @@ def initiate_payment(product_id, phone_number):
     product = Product.objects.get(id=product_id)
     
     # Initiate STK Push
-    response = mpesa.stk_push(
+    response = mpesa.stkPush(
         amount=product.price,
         phone_number=phone_number,
         account_reference=f"ORDER-{product_id}",
@@ -339,7 +339,7 @@ from django.http import JsonResponse
 mpesa = MpesaDjangoClient()
 
 def initiate_payment(request):
-    response = mpesa.stk_push(
+    response = mpesa.stkPush(
         amount=100,
         phone_number="254712345678",
         account_reference="INV-001",
@@ -348,10 +348,10 @@ def initiate_payment(request):
     return JsonResponse(response)
 
 # urls.py
-from singularity_payments.django import mpesa_callback_view
+from singularity_payments.django import stk_callback
 
 urlpatterns = [
-    path('api/mpesa/callback/', mpesa_callback_view, name='mpesa_callback'),
+    path('api/mpesa/callback/', stk_callback, name='mpesa_callback'),
 ]
 ```
 
@@ -375,7 +375,7 @@ mpesa = MpesaFastAPIClient(
 
 @app.post("/api/payment/initiate")
 async def initiate_payment():
-    response = await mpesa.stk_push(
+    response = await mpesa.stkPush(
         amount=100,
         phone_number="254712345678",
         account_reference="INV-001",
@@ -408,7 +408,7 @@ mpesa = MpesaFlaskClient(
 
 @app.route('/api/payment/initiate', methods=['POST'])
 def initiate_payment():
-    response = mpesa.stk_push(
+    response = mpesa.stkPush(
         amount=100,
         phone_number="254712345678",
         account_reference="INV-001",
@@ -418,7 +418,7 @@ def initiate_payment():
 
 @app.route('/api/mpesa/callback', methods=['POST'])
 def callback():
-    return mpesa.handle_callback(request)
+    return mpesa.handleStkCallback(request)
 ```
 
 ## Error Handling
@@ -433,7 +433,7 @@ from singularity_payments.exceptions import (
 )
 
 try:
-    response = mpesa.stk_push(
+    response = mpesa.stkPush(
         amount=100,
         phone_number="254712345678",
         account_reference="INV-001",
@@ -466,24 +466,14 @@ mpesa = MpesaClient(
 )
 ```
 
-### C2B Simulation
 
-Simulate C2B transactions in sandbox:
-
-```python
-response = mpesa.simulate_c2b(
-    amount=100,
-    phone_number="254712345678",
-    bill_ref_number="INV-001"
-)
-```
 
 ## API Reference
 
 ### STK Push
 
 ```python
-mpesa.stk_push(
+mpesa.stkPush(
     amount: int,
     phone_number: str,
     account_reference: str,
